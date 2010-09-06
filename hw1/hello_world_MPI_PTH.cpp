@@ -2,7 +2,7 @@
 MPI/PThread Hybrid Example
 FILE: hello_world_MPI_PTH.cpp
 To compile:
-   $ mpicc hello_world_MPI_PTH.cpp -o hello_world_MPI_PTH -lpthread 
+   $ icc hello_world_MPI_PTH.cpp -o hello_world_MPI_PTH -lmpi -lmpi++ -lpthread 
 To run (on N processors and M threads):
    $ mpirun -np N ./hello_world_MPI_PTH M
 */
