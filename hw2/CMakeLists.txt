@@ -85,3 +85,55 @@ add_test(add_num_MPI_rv2_12_proc_2483_datasize
    mpirun -np 12 ./add_num_MPI_rv2.exe 2483)
 set_tests_properties(add_num_MPI_rv2_12_proc_2483_datasize 
    PROPERTIES PASS_REGULAR_EXPRESSION "Sum of numbers is 3081403")
+
+# rv3:
+add_executable(add_num_MPI_rv3.exe add_num_MPI_rv3.cpp)
+target_link_libraries(add_num_MPI_rv3.exe mpi)
+add_test(add_num_MPI_rv3_1_proc_2483_datasize 
+   mpirun -np 1 ./add_num_MPI_rv3.exe 2483)
+set_tests_properties(add_num_MPI_rv3_1_proc_2483_datasize 
+   PROPERTIES PASS_REGULAR_EXPRESSION "Sum of numbers is 3081403")
+add_test(add_num_MPI_rv3_2_proc_2483_datasize 
+   mpirun -np 2 ./add_num_MPI_rv3.exe 2483)
+set_tests_properties(add_num_MPI_rv3_2_proc_2483_datasize 
+   PROPERTIES PASS_REGULAR_EXPRESSION "Sum of numbers is 3081403")
+add_test(add_num_MPI_rv3_3_proc_2483_datasize 
+   mpirun -np 3 ./add_num_MPI_rv3.exe 2483)
+set_tests_properties(add_num_MPI_rv3_3_proc_2483_datasize 
+   PROPERTIES PASS_REGULAR_EXPRESSION "Sum of numbers is 3081403")
+add_test(add_num_MPI_rv3_4_proc_2483_datasize 
+   mpirun -np 4 ./add_num_MPI_rv3.exe 2483)
+set_tests_properties(add_num_MPI_rv3_4_proc_2483_datasize 
+   PROPERTIES PASS_REGULAR_EXPRESSION "Sum of numbers is 3081403")
+add_test(add_num_MPI_rv3_5_proc_2483_datasize 
+   mpirun -np 5 ./add_num_MPI_rv3.exe 2483)
+set_tests_properties(add_num_MPI_rv3_5_proc_2483_datasize 
+   PROPERTIES PASS_REGULAR_EXPRESSION "Sum of numbers is 3081403")
+add_test(add_num_MPI_rv3_6_proc_2483_datasize 
+   mpirun -np 6 ./add_num_MPI_rv3.exe 2483)
+set_tests_properties(add_num_MPI_rv3_6_proc_2483_datasize 
+   PROPERTIES PASS_REGULAR_EXPRESSION "Sum of numbers is 3081403")
+add_test(add_num_MPI_rv3_7_proc_2483_datasize 
+   mpirun -np 7 ./add_num_MPI_rv3.exe 2483)
+set_tests_properties(add_num_MPI_rv3_7_proc_2483_datasize 
+   PROPERTIES PASS_REGULAR_EXPRESSION "Sum of numbers is 3081403")
+add_test(add_num_MPI_rv3_8_proc_2483_datasize 
+   mpirun -np 8 ./add_num_MPI_rv3.exe 2483)
+set_tests_properties(add_num_MPI_rv3_8_proc_2483_datasize 
+   PROPERTIES PASS_REGULAR_EXPRESSION "Sum of numbers is 3081403")
+add_test(add_num_MPI_rv3_9_proc_2483_datasize 
+   mpirun -np 9 ./add_num_MPI_rv3.exe 2483)
+set_tests_properties(add_num_MPI_rv3_9_proc_2483_datasize 
+   PROPERTIES PASS_REGULAR_EXPRESSION "Sum of numbers is 3081403")
+add_test(add_num_MPI_rv3_10_proc_2483_datasize 
+   mpirun -np 10 ./add_num_MPI_rv3.exe 2483)
+set_tests_properties(add_num_MPI_rv3_10_proc_2483_datasize 
+   PROPERTIES PASS_REGULAR_EXPRESSION "Sum of numbers is 3081403")
+add_test(add_num_MPI_rv3_11_proc_2483_datasize 
+   mpirun -np 11 ./add_num_MPI_rv3.exe 2483)
+set_tests_properties(add_num_MPI_rv3_11_proc_2483_datasize 
+   PROPERTIES PASS_REGULAR_EXPRESSION "Sum of numbers is 3081403")
+add_test(add_num_MPI_rv3_12_proc_2483_datasize 
+   mpirun -np 12 ./add_num_MPI_rv3.exe 2483)
+set_tests_properties(add_num_MPI_rv3_12_proc_2483_datasize 
+   PROPERTIES PASS_REGULAR_EXPRESSION "Sum of numbers is 3081403")
