@@ -1,0 +1,19 @@
+Josh Calahan
+CPE512 Homework # 2
+September 12, 2010
+
+Problem # 1: Identify add_num_MPI.cpp limitations.
+
+Limitation # 1: The code only works for data list sizes that are a multiple of the number of processors. That is, if the data list size is 10, then the number of processors has to be either 1, 2, or 5; if the number of processors is anything else then the code returns an incorrect summation.
+
+Limitation # 2: The code dosen't take advantage of available MPI functions. That is, the code implements it's own scatter() and reduce() routines in leiu of simply using the MPI_scatter() and MPI_reduce() routines. 
+
+Limitation # 3: The code dosen't come with unit tests.
+
+Limitation # 4: The code uses memory ineffenctly: ranks 2-N needlesly allocate memory for the numbers array. 
+
+Problem # 2: Create add_num_MPI_rv1.cpp to determine and report maximum and minimum numbers.
+
+See the attached code. Here is the output:
+
+

@@ -22,10 +22,10 @@ assignments. Use the altix.asc.edu system for these assignments.
 
 To compile type:
 
-   icc add_num_MPI.cpp -o add_num_MPI -lmpi
+   icc add_num_MPI_rv1.cpp -o add_num_MPI_rv1 -lmpi
 
 To execute:
-   mpirun -np [num MPI process] add_num_MPI [num of numbers] 
+   mpirun -np [num MPI process] add_num_MPI_rv1 [num of numbers] 
 
 Notes: This implementation utilizes a minimum set of MPI function
        call that include MPI_Init, MPI_Finalize, MPI_Comm_size,
@@ -89,7 +89,7 @@ int get_data_size(int argc,char *argv[],int rank,int numtasks)
    // ERROR if too many command line arguments
    if(argc > 2) {
       if (rank==0)
-         cout << "usage:  mpirun -np [num MPI tasks] add_num_MPI [data size]" << endl;
+         cout << "usage:  mpirun -np [num MPI tasks] add_num_MPI_rv1 [data size]" << endl;
       MPI_Finalize(); // Terminate MPI
       exit(1); // Exit Program 
    }
