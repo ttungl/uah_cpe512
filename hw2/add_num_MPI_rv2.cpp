@@ -171,6 +171,7 @@ void scatter(int num_size,double *numbers,double *group,int rank,int numtasks)
    
    /* determine group size */
    group_size = num_size/numtasks;
+   if (rank == numtasks-1) group_size += num_size%numtasks;
 
    /* set up initial beginning element to be start of numbers array */   
    begin_element = group_size;
@@ -181,6 +182,7 @@ void scatter(int num_size,double *numbers,double *group,int rank,int numtasks)
       for (i=0;i<group_size;i++) group[i]=numbers[i];
       /* in other cases perform interprocess communication */
       for(mpitask=1;mpitask<numtasks;mpitask++) {
+         if (mpitask == numtasks-1) group_size += num_size%numtasks;
          /* send group portion of numbers array to other tasks */
          MPI_Send(&numbers[begin_element],group_size,MPI_DOUBLE, 
                mpitask,type,MPI_COMM_WORLD);
@@ -303,9 +305,12 @@ int main( int argc, char *argv[])
    //the user for input
    data_size=get_data_size(argc,argv,rank,numtasks);
 
+   num_group = data_size/numtasks; // determine local list size 
+   if (rank == numtasks-1) num_group += data_size%numtasks;
+
    // dynamically allocate from heap the numbers and group arrays
    numbers = new (nothrow) double[data_size];
-   group = new (nothrow) double[data_size/numtasks+1];
+   group = new (nothrow) double[num_group+1];
    if (numbers==0 || group==0) { // check for null pointers
       if (rank==0) cout << "Memory Allocation Error" << endl;
       MPI_Finalize(); // Exit MPI
@@ -328,7 +333,6 @@ int main( int argc, char *argv[])
 
    // sum up elements in the group associated with the
    // current process
-   num_group = data_size/numtasks; // determine local list size 
                                    // group
    pt_sum =0;                      // clear out partial sum
    for (i=0;i<num_group;i++) {
