@@ -8,12 +8,28 @@ Limitation # 1: The code only works for data list sizes that are a multiple of t
 
 Limitation # 2: The code dosen't take advantage of available MPI functions. That is, the code implements it's own scatter() and reduce() routines in leiu of simply using the MPI_scatter() and MPI_reduce() routines. 
 
-Limitation # 3: The code dosen't come with unit tests.
+Limitation # 3: The code uses memory ineffenctly: ranks 2-N needlesly allocate memory for the numbers array. 
 
-Limitation # 4: The code uses memory ineffenctly: ranks 2-N needlesly allocate memory for the numbers array. 
+Limitation # 4: The code dosen't come with unit tests.
 
 Problem # 2: Create add_num_MPI_rv1.cpp to determine and report maximum and minimum numbers.
 
 See the attached code. Here is the output:
 
+$ mpirun -np 1 ./add_num_MPI_rv1.exe 2483
+numbers matrix =
+0
+1
+2
+...
+2480
+2481
+2482
 
+Sum of numbers is 3081403
+Minimum number is 0
+Maximum number is 2482
+
+Problem # 3: Create add_num_MPI_rv2.cpp to allow data list sizes to be something other than a multiple of the number of processors.
+
+See the attached code. Here is the output:
