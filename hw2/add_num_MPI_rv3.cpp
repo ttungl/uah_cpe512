@@ -142,7 +142,8 @@ int main( int argc, char *argv[])
    //the user for input
    data_size=get_data_size(argc,argv,rank,numtasks);
 
-   num_group = data_size/numtasks + data_size%numtasks; // determine local list size 
+   num_group = data_size/numtasks; // determine local list size 
+   if (rank==numtasks-1) num_group += data_size%numtasks;
 
    // dynamically allocate from heap the numbers and group arrays
    numbers = new (nothrow) double[data_size];
@@ -168,6 +169,16 @@ int main( int argc, char *argv[])
    MPI_Scatter(numbers, num_group, MPI_DOUBLE, 
                group, num_group, MPI_DOUBLE, 
                0, MPI_COMM_WORLD);
+
+   int balance = data_size%numtasks;
+   if (balance) {
+      if (0==rank) {
+         MPI_Send(numbers+(num_group*numtasks), balance, MPI_DOUBLE, numtasks-1, 123, MPI_COMM_WORLD);
+      }
+      if (numtasks-1==rank) {
+         MPI_Recv(group+num_group-balance, balance, MPI_DOUBLE, 0, 123, MPI_COMM_WORLD, &status);
+      }
+   }
 
    // sum up elements in the group associated with the
    // current process
