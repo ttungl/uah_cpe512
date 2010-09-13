@@ -43,39 +43,6 @@ using namespace std;
 #define MAX_VALUE  100.0    /* maximum value of any number in list */
 #define MIN_VALUE  0.0      /* minimum value of any number in list */
 /*
-ONE-TO-ALL BROADCAST COMMUNICATION ROUTINE
-Routine to send from the root MPI process (0) to all other
-MPI processes in the system the data whose size given by the
-'num_size' parameter. 
-*/
-int send_all_int(int num_size,int rank,int numtasks)
-{
-   int mpitask,i,rec_num,type;
-   MPI_Status status;
-
-   type = 123;
-
-   /* for root process, rec_num will simply be set to the input */
-   /* argument.  It will be overwritten if this is not the      */
-   /* root process                                              */
-   rec_num=num_size;
-
-   if (rank==0) {
-      for(mpitask=1;mpitask<numtasks;mpitask++) {
-         MPI_Send(&num_size,1,MPI_INT, 
-               mpitask,type,MPI_COMM_WORLD);
-      }
-   }
-   /* if not root process wait to receive number of numbers */
-   else {
-      MPI_Recv(&rec_num,1,MPI_INT,
-               0,type, MPI_COMM_WORLD,&status);
-   }
-
-   return rec_num;
-}
-
-/*
 Routine to retrieve the data size of the numbers array from the 
 command line or get this number by prompting the user for the 
 information.  Note: command line values are sent to ALL MPI processes
@@ -110,9 +77,9 @@ int get_data_size(int argc,char *argv[],int rank,int numtasks)
       }     
       // since only the root MPI process is communicating with the
       // user, the root process must send its value to all of the
-      // other MPI process. It can do this with the send_all_int()
+      // other MPI process. It can do this with the MPI_Bcast()
       // broadcast routine.
-      size = send_all_int(size,rank,numtasks);
+      MPI_Bcast(&size, 1, MPI_INT, 0, MPI_COMM_WORLD);
    }
    // Two Command Line Argument case:
    // user supplied the number of numbers on the command line.
@@ -195,95 +162,7 @@ void scatter(int num_size,double *numbers,double *group,int rank,int numtasks)
                0,type, MPI_COMM_WORLD,&status);  
    }
 }
-/*
-ALL-TO-ONE Reduce ROUTINE
-Routine to accumulate the result of the local summation associated
-with each MPI process. This routine takes these partial sums and 
-produces a global sum on the root MPI process (0)
-Input arguments to routine include variable name of local partial
-sum of each MPI process. The function returns to MPI root process 0,
-the global sum (summation of all partial sums).
-*/
-double reduce(double partial_sum,int rank,int numtasks)
-{
-   int i,mpitask;
-   double sum,p_sum;
-   int type;
-   MPI_Status status;
 
-   type = 123;
-   sum = partial_sum;
-   // if MPI process 0 sum up results from the other p-1 processes
-   if (rank==0) {
-      for(mpitask=1;mpitask<numtasks;mpitask++) {
-         MPI_Recv(&p_sum,1,MPI_DOUBLE,
-         mpitask,type,MPI_COMM_WORLD,&status);
-         sum += p_sum;
-      }
-   }
-   // if not root MPI process 0 then send partial sum to process 0
-   else {
-      MPI_Send(&partial_sum,1, MPI_DOUBLE, 
-         0, type, MPI_COMM_WORLD);
-   }
-   return sum;
-}
-
-/*
-ALL-TO-ONE Reduce_min ROUTINE
-*/
-double reduce_min(double partial_min,int rank,int numtasks)
-{
-   int i,mpitask;
-   double minv,p_minv;
-   int type;
-   MPI_Status status;
-
-   type = 123;
-   minv = partial_min;
-   // if MPI process 0 gather up results from the other p-1 processes
-   if (rank==0) {
-      for(mpitask=1;mpitask<numtasks;mpitask++) {
-         MPI_Recv(&p_minv,1,MPI_DOUBLE,
-         mpitask,type,MPI_COMM_WORLD,&status);
-         if (minv>p_minv) minv=p_minv;
-      }
-   }
-   // if not root MPI process 0 then send partial min to process 0
-   else {
-      MPI_Send(&partial_min,1, MPI_DOUBLE, 
-         0, type, MPI_COMM_WORLD);
-   }
-   return minv;
-}
-
-/*
-ALL-TO-ONE Reduce_min ROUTINE
-*/
-double reduce_max(double partial_max,int rank,int numtasks)
-{
-   int i,mpitask;
-   double maxv,p_maxv;
-   int type;
-   MPI_Status status;
-
-   type = 123;
-   maxv = partial_max;
-   // if MPI process 0 gather up results from the other p-1 processes
-   if (rank==0) {
-      for(mpitask=1;mpitask<numtasks;mpitask++) {
-         MPI_Recv(&p_maxv,1,MPI_DOUBLE,
-         mpitask,type,MPI_COMM_WORLD,&status);
-         if (maxv<p_maxv) maxv=p_maxv;
-      }
-   }
-   // if not root MPI process 0 then send partial max to process 0
-   else {
-      MPI_Send(&partial_max,1, MPI_DOUBLE, 
-         0, type, MPI_COMM_WORLD);
-   }
-   return maxv;
-}
 /*
 MAIN ROUTINE: summation of numbers in a list
 */
@@ -291,7 +170,7 @@ MAIN ROUTINE: summation of numbers in a list
 int main( int argc, char *argv[])
 {
    double *numbers,*group;
-   double sum, pt_sum, minv, maxv;
+   double sum, pt_sum, minv, p_minv, maxv, p_maxv;
    int data_size,group_size,num_group,i;
    int numtasks,rank,num;
    MPI_Status status;
@@ -330,6 +209,9 @@ int main( int argc, char *argv[])
    // scatter the numbers matrix to all processing elements in
    // the system
    scatter(data_size,numbers,group,rank,numtasks);
+   //MPI_Scatter(numbers, num_group, MPI_DOUBLE, 
+   //            group, num_group, MPI_DOUBLE, 
+   //            0, MPI_COMM_WORLD);
 
    // sum up elements in the group associated with the
    // current process
@@ -338,18 +220,19 @@ int main( int argc, char *argv[])
    for (i=0;i<num_group;i++) {
       pt_sum += group[i];
       if (0==i) {
-         minv=group[i];
-         maxv=group[i];
+         p_minv=group[i];
+         p_maxv=group[i];
       } else {
-         if (minv>group[i]) minv=group[i];
-         if (maxv<group[i]) maxv=group[i];
+         if (p_minv>group[i]) p_minv=group[i];
+         if (p_maxv<group[i]) p_maxv=group[i];
       }
    }
 
    // obtain final sum, min, and max by summing up partial sums from other MPI tasks/
-   sum=reduce(pt_sum,rank,numtasks);
-   minv=reduce_min(minv,rank,numtasks);
-   maxv=reduce_max(maxv,rank,numtasks);
+   //sum=reduce(pt_sum,rank,numtasks);
+   MPI_Reduce(&pt_sum, &sum, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD); 
+   MPI_Reduce(&p_minv, &minv, 1, MPI_DOUBLE, MPI_MIN, 0, MPI_COMM_WORLD); 
+   MPI_Reduce(&p_maxv, &maxv, 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD); 
 
    // output sum from root MPI process
    if (rank==0) {
