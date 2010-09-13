@@ -122,51 +122,9 @@ void print_matrix(double *numbers,int data_size)
    }
 }
 
-
-/* ONE-TO-ALL SCATTER ROUTINE
-Routine to divide and scatter the number data array that resides on the
-root MPI process (0) to all other MPI processes in the system.
-The number data size is given by the'num_size' parameter its source 
-address is given by the '*numbers' parameter, and the destination
-group data associated with the current process is given by the
-'*group' parameter.  */
-void scatter(int num_size,double *numbers,double *group,int rank,int numtasks)
-{
-   MPI_Status status;
-   int i,mpitask,type,group_size,next_group,begin_element;
-   type = 234;
-   
-   /* determine group size */
-   group_size = num_size/numtasks;
-   if (rank == numtasks-1) group_size += num_size%numtasks;
-
-   /* set up initial beginning element to be start of numbers array */   
-   begin_element = group_size;
-      
-   /* if root process send group data to all processes */ 
-   if (rank==0) {
-      // in MPI process 0 case just copy portion of data over to the group array
-      for (i=0;i<group_size;i++) group[i]=numbers[i];
-      /* in other cases perform interprocess communication */
-      for(mpitask=1;mpitask<numtasks;mpitask++) {
-         if (mpitask == numtasks-1) group_size += num_size%numtasks;
-         /* send group portion of numbers array to other tasks */
-         MPI_Send(&numbers[begin_element],group_size,MPI_DOUBLE, 
-               mpitask,type,MPI_COMM_WORLD);
-         begin_element += group_size;
-      }
-   }
-   /* if a non root process just receive the data */
-   else {
-      MPI_Recv(group,group_size,MPI_DOUBLE,
-               0,type, MPI_COMM_WORLD,&status);  
-   }
-}
-
 /*
 MAIN ROUTINE: summation of numbers in a list
 */
-
 int main( int argc, char *argv[])
 {
    double *numbers,*group;
@@ -184,8 +142,7 @@ int main( int argc, char *argv[])
    //the user for input
    data_size=get_data_size(argc,argv,rank,numtasks);
 
-   num_group = data_size/numtasks; // determine local list size 
-   if (rank == numtasks-1) num_group += data_size%numtasks;
+   num_group = data_size/numtasks + data_size%numtasks; // determine local list size 
 
    // dynamically allocate from heap the numbers and group arrays
    numbers = new (nothrow) double[data_size];
@@ -208,10 +165,9 @@ int main( int argc, char *argv[])
    }
    // scatter the numbers matrix to all processing elements in
    // the system
-   scatter(data_size,numbers,group,rank,numtasks);
-   //MPI_Scatter(numbers, num_group, MPI_DOUBLE, 
-   //            group, num_group, MPI_DOUBLE, 
-   //            0, MPI_COMM_WORLD);
+   MPI_Scatter(numbers, num_group, MPI_DOUBLE, 
+               group, num_group, MPI_DOUBLE, 
+               0, MPI_COMM_WORLD);
 
    // sum up elements in the group associated with the
    // current process
