@@ -1,0 +1,7 @@
+To run the programs, use the CMake script that is included in this directory.
+
+CMake is installed in my $HOME directory at /home/uahcls19/local/bin 
+
+The test.sh script in this directory will call CMake to build the Makefiles,
+then run make to build the programs, then run make test to run through all
+the test cases.
