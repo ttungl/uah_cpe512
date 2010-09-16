@@ -1,16 +1,16 @@
-Josh Calahan
+﻿Josh Calahan
 CPE512 Homework # 2
-September 12, 2010
+September 15, 2010
 
 Problem # 1: Identify add_num_MPI.cpp limitations.
 
 Limitation # 1: The code only works for data list sizes that are a multiple of the number of processors. That is, if the data list size is 10, then the number of processors has to be either 1, 2, 5 or 10; if the number of processors is anything else then the code returns an incorrect summation.
 
-Limitation # 2: The code dosen't take advantage of available MPI functions. That is, the code implements it's own scatter() and reduce() routines in leiu of simply using the MPI_scatter() and MPI_reduce() routines. 
+Limitation # 2: The code doesn't take advantage of available MPI functions. That is, the code implements it's own scatter() and reduce() routines in lieu of simply using the MPI_scatter() and MPI_reduce() routines. 
 
-Limitation # 3: The code uses memory ineffenctly: ranks 2-N needlesly allocate memory for the numbers array. 
+Limitation # 3: The code uses memory inefficiency: ranks 2-N needlessly allocate memory for the numbers array. 
 
-Limitation # 4: The code dosen't come with unit tests.
+Limitation # 4: The code doesn't come with unit tests.
 
 Problem # 2: Create add_num_MPI_rv1.cpp to determine and report maximum and minimum numbers.
 
@@ -66,3 +66,29 @@ Minimum number is 0
 Maximum number is 2482
 
 The attached CMake file contains test that verify that the program works correctly from 2 to 16 processors for a number set size of 2483 numbers.
+
+Problem # 5: A multiprocessor consists of 100 processors, each capable of a peak execution rate of 200 Gflops. What is the performance of the system as measured in Gflops when 15% of the code is sequential and 85% is parallelization?
+
+A performance factor can be determined using Amdahl's law.   
+
+              p
+   S(p) = --------
+          1+(p-1)f
+
+Where p is the number of processors and f is the fraction of the computation that cannot be divided into concurrent tasks.
+
+Maximum performance is achieved when the sequential portion is 0%. For example:
+
+              100
+   S(p) = ---------- = 100
+          1+(100-1)0
+
+Then 100 x 200 Gflops = 20,000 Gflops.
+
+When 15% of the code is sequential then we get a performance of 
+
+               100
+   S(p) = ------------ = 6.31
+          1+(100-1).15
+
+Then 6.31 x 200 Gflops = 1,262 Gflops.
