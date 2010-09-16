@@ -142,7 +142,7 @@ int main( int argc, char *argv[])
    //the user for input
    data_size=get_data_size(argc,argv,rank,numtasks);
 
-   num_group = data_size/numtasks + data_size%numtasks; // determine local list size 
+   num_group = data_size/numtasks; // determine local list size 
 
    // dynamically allocate from heap the numbers and group arrays
    numbers = new (nothrow) double[data_size];
@@ -181,6 +181,15 @@ int main( int argc, char *argv[])
       } else {
          if (p_minv>group[i]) p_minv=group[i];
          if (p_maxv<group[i]) p_maxv=group[i];
+      }
+   }
+
+   int balance = data_size%numtasks;
+   if (0==rank && balance) {
+      for (i=data_size-balance;i<data_size;i++) {
+         pt_sum += numbers[i];
+         if (p_minv>numbers[i]) p_minv=numbers[i];
+         if (p_maxv<numbers[i]) p_maxv=numbers[i];
       }
    }
 
