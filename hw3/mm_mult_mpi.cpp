@@ -206,9 +206,10 @@ int main( int argc, char *argv[])
       }
       r[j] = dot_prod;
    }
-   cout << "rank = " << rank << " ";
-   print_vector("r",r,dim_m);
-   cout << endl;
+
+   MPI_Gather(r, dim_m, MPI_FLOAT, 
+              c, dim_m, MPI_FLOAT, 
+              0, MPI_COMM_WORLD);
 
    /*
       stop recording the execution time
