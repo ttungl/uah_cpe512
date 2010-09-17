@@ -141,6 +141,7 @@ void print_vector(const char *prefix,float *array,int dim)
 
 int main( int argc, char *argv[])
 {
+   bool debug = false;
    float *a,*b,*c,*v,*r,dot_prod;
    int dim_l,dim_n,dim_m;
    int i,j,k;
@@ -173,7 +174,7 @@ int main( int argc, char *argv[])
       srand48(SEED);
       fill_matrix(a,dim_l,dim_m);
       fill_matrix(b,dim_m,dim_n);
-      print_vector("A",a,dim_l*dim_m); cout << endl;
+      if (debug) print_vector("A",a,dim_l*dim_m); cout << endl;
    }
 
    //MPI_Bcast(a, dim_l*dim_m, MPI_FLOAT, 0, MPI_COMM_WORLD);
@@ -181,17 +182,22 @@ int main( int argc, char *argv[])
    MPI_Scatter(a, dim_m, MPI_FLOAT, 
                v, dim_m, MPI_FLOAT, 
                0, MPI_COMM_WORLD);
-   cout << "rank = " << rank << " ";
-   print_vector("v",v,dim_m);
-   cout << endl;
+
+   if (debug) {
+      cout << "rank = " << rank << " ";
+      print_vector("v",v,dim_m);
+      cout << endl;
+   }
 
    MPI_Bcast(b, dim_m*dim_n, MPI_FLOAT, 0, MPI_COMM_WORLD);
 
    /*
      output numbers matrix
    */
-   if (rank==0) print_matrix("A",a,dim_l,dim_m);
-   if (rank==0) print_matrix("B",b,dim_m,dim_n);
+   if (debug && rank==0) {
+      print_matrix("A",a,dim_l,dim_m);
+      print_matrix("B",b,dim_m,dim_n);
+   }
 
    /*
    */
@@ -216,12 +222,11 @@ int main( int argc, char *argv[])
    */ 
    TIMER_STOP;
 
-   if (rank==0) print_matrix("C",c,dim_l,dim_n);
+   if (debug && rank==0) print_matrix("C",c,dim_l,dim_n);
 
-   cout << "rank = " << rank 
-        << " time = " << setprecision(8) 
-        << TIMER_ELAPSED/1000000.0 
-        << " seconds" << endl;
+   if (rank==0) cout << " time = " << setprecision(8) 
+                     << TIMER_ELAPSED/1000000.0 
+                     << " seconds" << endl;
 
    MPI_Finalize();
 }
