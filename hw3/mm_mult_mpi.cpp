@@ -112,7 +112,6 @@ void fill_matrix(float *array,int dim_n,int dim_m)
 */
 void print_matrix(float *array,int dim_m,int dim_n)
 {
-   return;
    int i,j;
    for(i=0;i<dim_m;i++) {
       for (j=0;j<dim_n;j++) {
