@@ -99,12 +99,15 @@ int get_index_size(int argc,char *argv[],int *dim_l,int *dim_m,int *dim_n) {
 */
 void fill_matrix(float *array,int dim_n,int dim_m)
 {
+#define M(i,j) *(array+i*dim_m+j)
    int i,j;
    for(i=0;i<dim_m;i++) {
       for (j=0;j<dim_n;j++) {
          array[i*dim_n+j]=drand48()*MAX_VALUE;
+         M(i,j) = (i+1)*(j+2);
       }
    }
+#undef M
 }
 
 /*

@@ -1,17 +1,19 @@
 /******************************************************************/
+/* Matrix Matrix Multiplication MPI Program                       */
+/* September 2010 -- Josh Calahan                                 */
+/* based on:                                                      */
 /* Matrix Matrix Multiplication Program Example -- serial version */
 /* September 2010 -- B. Earl Wells -- University of Alabama       */
 /*                                    in Huntsville               */
 /******************************************************************/
-// mm_mult_serial.c
+// mm_mult_mpi.cpp
 // compilation:
-//   gcc mm_mult_serial.c -o mm_mult_serial
+//   general: mpicxx -o mm_mult_mpi mm_multi_mpi.cpp
+//   ASC altis: icc -o mm_mult_mpi mm_multi_mpi.cpp -lmpi
 /*
    This program is designed to perform matrix matrix multiplication
-   A x B = C, where A is an lxm matrix, B is a m x n matrix and
-   C is a l x n matrix. The program is designed to be a template 
-   serial program that can be expanded into a parallel multiprocess
-   and/or a multi-threaded program.
+   A x B = C, where A is a l x m matrix, B is a m x n matrix and
+   C is a l x n matrix.  
 
    The program randomly assigns the elements of the A and B matrix
    with values between 0 and a MAX_VALUE. It then multiples the
@@ -27,7 +29,7 @@
    the third is the n dimension.
 
    To execute:
-   mm_mult_serial [l_parameter] <m_parameter n_parameter] 
+      mpirun -np n_procs mm_mult_serial l_parameter [m_parameter n_parameter] 
 */
 
 using namespace std;
@@ -37,6 +39,7 @@ using namespace std;
 #include <stdlib.h>
 #include <string.h>
 #include <sys/time.h>
+#include <mpi.h>
 
 #define MX_SZ 320
 #define SEED 2397           /* random number seed */
@@ -68,10 +71,11 @@ of the data structure.
    Routine to retrieve the data size of the numbers array from the 
    command line or by prompting the user for the information
 */
-int get_index_size(int argc,char *argv[],int *dim_l,int *dim_m,int *dim_n) {
+void get_index_size(int rank,int argc,char *argv[],int *dim_l,int *dim_m,int *dim_n) {
    if(argc!=2 && argc!=4) {
-      cout<<"usage:  mm_mult_serial [l_dimension] <m_dimension n_dimmension>"
-           << endl;
+      if (rank==0) cout<<"Usage: mpirun -np n_procs mm_mult_serial"
+                         "l_parameter [m_parameter n_parameter]\n";
+      MPI_Finalize();
       exit(1);
    }
    else {
@@ -99,19 +103,23 @@ int get_index_size(int argc,char *argv[],int *dim_l,int *dim_m,int *dim_n) {
 */
 void fill_matrix(float *array,int dim_n,int dim_m)
 {
+#define M(i,j) *(array+i*dim_m+j)
    int i,j;
    for(i=0;i<dim_m;i++) {
       for (j=0;j<dim_n;j++) {
          array[i*dim_n+j]=drand48()*MAX_VALUE;
+         M(i,j) = (i+1)*(j+2);
       }
    }
+#undef M
 }
 
 /*
    Routine that outputs the matrices to the screen 
 */
-void print_matrix(float *array,int dim_m,int dim_n)
+void print_matrix(const char *prefix,float *array,int dim_m,int dim_n)
 {
+   cout << prefix << " matrix =" << endl;
    int i,j;
    for(i=0;i<dim_m;i++) {
       for (j=0;j<dim_n;j++) {
@@ -119,6 +127,12 @@ void print_matrix(float *array,int dim_m,int dim_n)
       }
       cout << endl;
    }
+   cout << endl;
+}
+void print_vector(const char *prefix,float *array,int dim)
+{
+   cout << prefix << " vector = ";
+   for(int i=0;i<dim;i++) cout << array[i] << " ";
 }
 
 /*
@@ -127,70 +141,87 @@ void print_matrix(float *array,int dim_m,int dim_n)
 
 int main( int argc, char *argv[])
 {
-   float *a,*b,*c,dot_prod;
+   float *a,*b,*c,*v,*r,dot_prod;
    int dim_l,dim_n,dim_m;
    int i,j,k;
+   int numtasks,rank;
+   MPI_Status status;
+
+   MPI_Init(&argc,&argv);
+   MPI_Comm_size(MPI_COMM_WORLD,&numtasks);
+   MPI_Comm_rank(MPI_COMM_WORLD,&rank); 
 
    /* 
    get matrix sizes
    */
-   get_index_size(argc,argv,&dim_l,&dim_m,&dim_n);
+   get_index_size(rank,argc,argv,&dim_l,&dim_m,&dim_n);
   
    // dynamically allocate from heap the numbers in the memory space
-   // for the a,b, and c matrices 
-   a = new (nothrow) float[dim_l*dim_m];
-   b = new (nothrow) float[dim_m*dim_n];
-   c = new (nothrow) float[dim_l*dim_n];
-   if(a==0 || b==0 || c==0) {
-     cout <<"ERROR:  Insufficient Memory" << endl;
-     exit(1);
+   if (rank==0) {
+      a = new (nothrow) float[dim_l*dim_m];
+      c = new (nothrow) float[dim_l*dim_n];
    }
+
+   b = new (nothrow) float[dim_m*dim_n];
+   v = new (nothrow) float[dim_m]; // vector sent to proc
+   r = new (nothrow) float[dim_m]; // vector result from proc
    
    /*
       initialize numbers matrix with random data
    */ 
-   srand48(SEED);
-   fill_matrix(a,dim_l,dim_m);
-   fill_matrix(b,dim_m,dim_n);
+   if (rank==0) {
+      srand48(SEED);
+      fill_matrix(a,dim_l,dim_m);
+      fill_matrix(b,dim_m,dim_n);
+      print_vector("A",a,dim_l*dim_m); cout << endl;
+   }
+
+   //MPI_Bcast(a, dim_l*dim_m, MPI_FLOAT, 0, MPI_COMM_WORLD);
+
+   MPI_Scatter(a, dim_m, MPI_FLOAT, 
+               v, dim_m, MPI_FLOAT, 
+               0, MPI_COMM_WORLD);
+   cout << "rank = " << rank << " ";
+   print_vector("v",v,dim_m);
+   cout << endl;
+
+   MPI_Bcast(b, dim_m*dim_n, MPI_FLOAT, 0, MPI_COMM_WORLD);
 
    /*
      output numbers matrix
    */
-   cout << "A matrix =" << endl;
-   print_matrix(a,dim_l,dim_m);
-   cout << endl;
-
-   cout << "B matrix =" << endl;
-   print_matrix(b,dim_m,dim_n);
-   cout << endl;
+   if (rank==0) print_matrix("A",a,dim_l,dim_m);
+   if (rank==0) print_matrix("B",b,dim_m,dim_n);
 
    /*
-   Start recording the execution time
    */
    TIMER_CLEAR;
    TIMER_START;
 
    // multiply local part of matrix
-   for (i=0;i<dim_l;i++) {
-      for (j=0;j<dim_n;j++) {
-         dot_prod = 0.0;
-         for (k=0;k<dim_m;k++) {
-            dot_prod += A(i,k)*B(k,j);
-         }
-         C(i,j) = dot_prod;
+   for (j=0;j<dim_n;j++) {
+      dot_prod = 0.0;
+      for (k=0;k<dim_m;k++) {
+         dot_prod += v[k]*B(k,j);
       }
+      r[j] = dot_prod;
    }
-   
+   cout << "rank = " << rank << " ";
+   print_vector("r",r,dim_m);
+   cout << endl;
+
    /*
       stop recording the execution time
    */ 
    TIMER_STOP;
 
-   cout << "C matrix =" << endl;
-   print_matrix(c,dim_l,dim_n);
-   cout << endl;
-   cout << "time=" << setprecision(8) <<  TIMER_ELAPSED/1000000.0 
+   if (rank==0) print_matrix("C",c,dim_l,dim_n);
+
+   cout << "rank = " << rank 
+        << " time = " << setprecision(8) 
+        << TIMER_ELAPSED/1000000.0 
         << " seconds" << endl;
 
+   MPI_Finalize();
 }
 
