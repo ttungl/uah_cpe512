@@ -142,7 +142,7 @@ void print_vector(const char *prefix,float *array,int dim)
 int main( int argc, char *argv[])
 {
    bool debug = false;
-   bool verbose = true;
+   bool verbose = false;
    float *a,*b,*c,*v,*r,dot_prod;
    int dim_l,dim_n,dim_m;
    int i,j,k,datasize;
