@@ -68,7 +68,7 @@ of the data structure.
    Routine to retrieve the data size of the numbers array from the 
    command line or by prompting the user for the information
 */
-int get_index_size(int argc,char *argv[],int *dim_l,int *dim_m,int *dim_n) {
+void get_index_size(int argc,char *argv[],int *dim_l,int *dim_m,int *dim_n) {
    if(argc!=2 && argc!=4) {
       cout<<"usage:  mm_mult_serial [l_dimension] <m_dimension n_dimmension>"
            << endl;
