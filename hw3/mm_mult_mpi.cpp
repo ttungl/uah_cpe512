@@ -142,9 +142,10 @@ void print_vector(const char *prefix,float *array,int dim)
 int main( int argc, char *argv[])
 {
    bool debug = false;
+   bool verbose = true;
    float *a,*b,*c,*v,*r,dot_prod;
    int dim_l,dim_n,dim_m;
-   int i,j,k;
+   int i,j,k,datasize;
    int numtasks,rank;
    MPI_Status status;
 
@@ -156,19 +157,25 @@ int main( int argc, char *argv[])
    get matrix sizes
    */
    get_index_size(rank,argc,argv,&dim_l,&dim_m,&dim_n);
+
+   /*
+   datasize - n elements from the A matrix I have
+   */
+   datasize = (dim_l*dim_m)/numtasks;
+   if (debug && rank==0) cout << "datasize = " << datasize << endl;
   
    // dynamically allocate from heap the numbers in the memory space
-   if (rank==0) {
+   if (rank==0) { // only proc 0 has direct access to A & C matrices
       a = new (nothrow) float[dim_l*dim_m];
       c = new (nothrow) float[dim_l*dim_n];
    }
 
-   b = new (nothrow) float[dim_m*dim_n];
-   v = new (nothrow) float[dim_m]; // vector sent to proc
-   r = new (nothrow) float[dim_m]; // vector result from proc
+   b = new (nothrow) float[dim_m*dim_n]; // each proc gets B matrix
+   v = new (nothrow) float[datasize]; // input from A to each proc
+   r = new (nothrow) float[datasize]; // output to C from each proc
    
    /*
-      initialize numbers matrix with random data
+      initialize A & B numbers matrix with random data
    */ 
    if (rank==0) {
       srand48(SEED);
@@ -177,44 +184,45 @@ int main( int argc, char *argv[])
       if (debug) print_vector("A",a,dim_l*dim_m); cout << endl;
    }
 
-   //MPI_Bcast(a, dim_l*dim_m, MPI_FLOAT, 0, MPI_COMM_WORLD);
-
-   MPI_Scatter(a, dim_m, MPI_FLOAT, 
-               v, dim_m, MPI_FLOAT, 
-               0, MPI_COMM_WORLD);
-
-   if (debug) {
-      cout << "rank = " << rank << " ";
-      print_vector("v",v,dim_m);
-      cout << endl;
-   }
-
-   MPI_Bcast(b, dim_m*dim_n, MPI_FLOAT, 0, MPI_COMM_WORLD);
-
    /*
      output numbers matrix
    */
-   if (debug && rank==0) {
+   if (verbose && rank==0) {
       print_matrix("A",a,dim_l,dim_m);
       print_matrix("B",b,dim_m,dim_n);
    }
 
    /*
+   Start recording the execution time
    */
    TIMER_CLEAR;
    TIMER_START;
 
-   // multiply local part of matrix
-   for (j=0;j<dim_n;j++) {
-      dot_prod = 0.0;
-      for (k=0;k<dim_m;k++) {
-         dot_prod += v[k]*B(k,j);
-      }
-      r[j] = dot_prod;
+   MPI_Scatter(a, datasize, MPI_FLOAT, 
+               v, datasize, MPI_FLOAT, 
+               0, MPI_COMM_WORLD);
+
+   if (debug) {
+      cout << "rank = " << rank << " ";
+      print_vector("v",v,datasize);
+      cout << endl;
    }
 
-   MPI_Gather(r, dim_m, MPI_FLOAT, 
-              c, dim_m, MPI_FLOAT, 
+   MPI_Bcast(b, dim_m*dim_n, MPI_FLOAT, 0, MPI_COMM_WORLD);
+
+   // multiply local part of matrix
+   for (i=0;i<datasize/dim_l;i++) {
+      for (j=0;j<dim_n;j++) {
+         dot_prod = 0.0;
+         for (k=0;k<dim_m;k++) {
+            dot_prod += v[i*dim_m+k]*B(k,j);
+         }
+         r[i*dim_m+j] = dot_prod;
+      }
+   }
+
+   MPI_Gather(r, datasize, MPI_FLOAT, 
+              c, datasize, MPI_FLOAT, 
               0, MPI_COMM_WORLD);
 
    /*
@@ -222,7 +230,7 @@ int main( int argc, char *argv[])
    */ 
    TIMER_STOP;
 
-   if (debug && rank==0) print_matrix("C",c,dim_l,dim_n);
+   if (verbose && rank==0) print_matrix("C",c,dim_l,dim_n);
 
    if (rank==0) cout << " time = " << setprecision(8) 
                      << TIMER_ELAPSED/1000000.0 
