@@ -1,0 +1,55 @@
+From: jac0020@uah.edu
+To: wellsbe@uah.edu
+Subject: An MPI Transformation Library for Moving Body Simulations
+
+Dr Wells:
+
+My project proposal summary is attached. It is related to work that I've been
+involved in for a number of years. In order to see the code from the serial 
+implementation you would need to request the software through my organization.
+Should you approve of my proposal we can proceed with this if you want.   
+
+Thanks, 
+Josh
+
+-------------------------------------------------------------------------------
+
+Josh Calahan
+CPE512 Project Proposal
+September 21, 2010
+
+For the CPE512 project I would like to develop a parallel moving-body library
+modeled after the serial FD-CADRE(1) implementation. A body is a unit of
+abstraction that may move, such as a human hand or an airplane wing. A group
+of related bodies is called a body hierarchy. A body hierarchy is a tree of
+nodes (bodies) that contain transformation matrices and meta data. Each node in
+the tree represents a body. Two body hierarchy examples are 1) A human body
+consisting of a torso, arms, hands, fingers, etc. and 2) An airplane consisting
+of a fuselage, wing, fin, flap, etc.
+
+The serial body hierarchy library is initialized at run-time by reading in body
+topology from a file. An on disk data structure is created that contains nodes,
+transformation matrices, and meta data. FD-CADRE plug-ins see the on disk data
+structure via an API. Some plug-ins produce motion for one or more bodies,
+while most plug-ins generally consume consolidated motion for all bodies. The
+FD-CADRE plug-in manager traverses the body tree to produce consolidated motion
+from each body's local motion. The existing implementation is not as a library
+but is embedded throughout existing code. I know of no single commercial or
+open-source standalone solution that provides a pluggable moving-body support. 
+ 
+The parallel implementation will be with MPI. The parallel body hierarchy
+library will be initialized by two files: the body topology file plus a file
+that describes what bodies need to communicate with what rank(s). There will
+probably be some body-motion to rank mapping. The library will work on some
+input MPI communicator. Each rank will contain a parallel copy of the body
+hierarchy. Tree traversal is fast and memory needed for the nodes (bodies) is
+minimal, so having multiple copies is not an issue. This may eliminate the need
+for a central body hierarchy manager. This may allow motion producer on a MPI
+rank to produce their results, asynchronously send them, then synchronize only
+as necessary.  I envision this parallel library being used in existing and new
+6DOFs(2), CFD(3) codes, and pre-/post-processing tools. 
+
+(1) FD-CADRE is a framework for moving-body applications. Add references.
+(2) 6DOF stands for six degree-of-freedom.
+(3) CFD is Computational Fluid Dynamics. A reference to Scientific American article.
+(4) MPI is prevalent in the CFD world. I have seen 
