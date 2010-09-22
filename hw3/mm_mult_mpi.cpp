@@ -232,7 +232,7 @@ int main( int argc, char *argv[])
 
    if (verbose && rank==0) print_matrix("C",c,dim_l,dim_n);
 
-   if (rank==0) cout << " time = " << setprecision(8) 
+   if (rank==0) cout << "time = " << setprecision(8) 
                      << TIMER_ELAPSED/1000000.0 
                      << " seconds" << endl;
 

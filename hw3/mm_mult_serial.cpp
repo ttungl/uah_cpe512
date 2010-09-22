@@ -197,8 +197,9 @@ int main( int argc, char *argv[])
       print_matrix(c,dim_l,dim_n);
       cout << endl;
    }
-   cout << "time = " << setprecision(8) <<  TIMER_ELAPSED/1000000.0 
-        << " seconds" << endl;
 
+   cout << "time = " << setprecision(8) 
+        << TIMER_ELAPSED/1000000.0 
+        << " seconds" << endl;
 }
 
