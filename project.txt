@@ -1,55 +1,18 @@
-From: jac0020@uah.edu
-To: wellsbe@uah.edu
-Subject: An MPI Transformation Library for Moving Body Simulations
-
-Dr Wells:
-
-My project proposal summary is attached. It is related to work that I've been
-involved in for a number of years. In order to see the code from the serial 
-implementation you would need to request the software through my organization.
-Should you approve of my proposal we can proceed with this if you want.   
-
-Thanks, 
-Josh
-
--------------------------------------------------------------------------------
-
 Josh Calahan
 CPE512 Project Proposal
-September 21, 2010
+September 22, 2010
 
-For the CPE512 project I would like to develop a parallel moving-body library
-modeled after the serial FD-CADRE(1) implementation. A body is a unit of
-abstraction that may move, such as a human hand or an airplane wing. A group
-of related bodies is called a body hierarchy. A body hierarchy is a tree of
-nodes (bodies) that contain transformation matrices and meta data. Each node in
-the tree represents a body. Two body hierarchy examples are 1) A human body
-consisting of a torso, arms, hands, fingers, etc. and 2) An airplane consisting
-of a fuselage, wing, fin, flap, etc.
+For the CPE512 project I would like to develop a parallel moving-body library modeled after the serial FD-CADRE1 implementation. A body is a unit of abstraction that may move, such as a human hand or an airplane wing. A group of related bodies is called a body hierarchy. A body hierarchy is a tree of nodes (bodies) that contain transformation matrices and meta data. Each node in the tree represents a body. Two body hierarchy examples are 1) A human body consisting of a torso, arms, hands, fingers, etc. and 2) An airplane consisting of a fuselage, wing, fin, flap, etc.
 
-The serial body hierarchy library is initialized at run-time by reading in body
-topology from a file. An on disk data structure is created that contains nodes,
-transformation matrices, and meta data. FD-CADRE plug-ins see the on disk data
-structure via an API. Some plug-ins produce motion for one or more bodies,
-while most plug-ins generally consume consolidated motion for all bodies. The
-FD-CADRE plug-in manager traverses the body tree to produce consolidated motion
-from each body's local motion. The existing implementation is not as a library
-but is embedded throughout existing code. I know of no single commercial or
-open-source standalone solution that provides a pluggable moving-body support. 
- 
-The parallel implementation will be with MPI. The parallel body hierarchy
-library will be initialized by two files: the body topology file plus a file
-that describes what bodies need to communicate with what rank(s). There will
-probably be some body-motion to rank mapping. The library will work on some
-input MPI communicator. Each rank will contain a parallel copy of the body
-hierarchy. Tree traversal is fast and memory needed for the nodes (bodies) is
-minimal, so having multiple copies is not an issue. This may eliminate the need
-for a central body hierarchy manager. This may allow motion producer on a MPI
-rank to produce their results, asynchronously send them, then synchronize only
-as necessary.  I envision this parallel library being used in existing and new
-6DOFs(2), CFD(3) codes, and pre-/post-processing tools. 
+The existing serial body hierarchy in FD-CADRE is initialized at run-time by reading in body topology from a file. An on disk data structure is created that contains nodes, transformation matrices, and meta data. FD-CADRE plug-ins see the on disk data structure via an API. Some plug-ins produce motion for one or more bodies, while most plug-ins generally consume consolidated motion for all bodies or for a sub-tree of bodies. The FD-CADRE plug-in manager traverses the body tree to produce consolidated motion from each body's local motion. The existing implementation is not as a library but is embedded throughout existing code. I know of no single commercial or open-source solution that provides pluggable moving-body support, much less a parallel implementation.
 
-(1) FD-CADRE is a framework for moving-body applications. Add references.
-(2) 6DOF stands for six degree-of-freedom.
-(3) CFD is Computational Fluid Dynamics. A reference to Scientific American article.
-(4) MPI is prevalent in the CFD world. I have seen 
+The parallel implementation will be with MPI2. The parallel body hierarchy library will be initialized by two files: the body topology file plus a file that describes what bodies need to communicate with what rank(s). There will probably be some body-motion to rank mapping. The library will work across some MPI communicator. Each rank will contain a copy of the body hierarchy. Tree traversal is fast and memory needed for the nodes (bodies) is minimal, so having multiple copies is not an issue. This may eliminate the need for a central body hierarchy manager. This may allow motion producers on their MPI rank to produce results, asynchronously send, then synchronize only as necessary. I envision this parallel library being used in existing and new 6DOFs3, CFD4 codes, and pre-/post-processing tools.
+
+Notes:
+1.	FD-CADRE is a framework for moving-body applications. For more information see:
+a.	Application of a CFD Moving Body System to Multi-component Store Separation, AIAA 2007-4073, 25th AIAA Applied Aerodynamics Conference, 25-28 June 2007, Miami, FL, Sickles, W. L., Power, G. D., Calahan, J. A., Denny, A. G.
+b.	A Flexible System for the Analysis of Bodies in Relative, AIAA 2005-5120, presented at the AIAA 35th Fluid Dynamics Conference and Exhibit, 6-9 June 2005, Toronto, Ontario, Canada., Power, G. D. and Calahan, J. A.
+c.	A system for Moving-Body CFD Simulations on Overset Structured and Unstructured Grids, AIAA 2004-0716, 42nd Aerospace Sciences Meeting and Exhibit, 5-8, January 2004, Reno, Nevada, Power, G. D., Calahan, J. A., Hensley, D. L.
+2.	MPI is prevalent in the slice of the scientific computing community I have worked in. Most tools I've seen that have a parallel implementation utilize MPI. 
+3.	6DOF stands for six degree-of-freedom. These are generally fast running tools that produce motion for a body (or group of bodies) based on external forces.
+4.	CFD stands Computational Fluid Dynamics. For a good introduction see: Tackling Turbulence with Supercomputers; January 1997; Scientific American Magazine; by Parviz Moin and John Kim. (URL: http://turb.seas.ucla.edu/~jkim/sciam/turbulence.html, PDF: http://tinyurl.com/2d5hsl8).
