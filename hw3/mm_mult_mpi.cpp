@@ -143,6 +143,7 @@ int main( int argc, char *argv[])
 {
    bool debug = false;
    bool verbose = false;
+   bool report_time = true;
    float *a,*b,*c,*v,*r,dot_prod;
    int dim_l,dim_n,dim_m;
    int i,j,k,datasize;
@@ -232,9 +233,11 @@ int main( int argc, char *argv[])
 
    if (verbose && rank==0) print_matrix("C",c,dim_l,dim_n);
 
-   if (rank==0) cout << "time = " << setprecision(8) 
-                     << TIMER_ELAPSED/1000000.0 
-                     << " seconds" << endl;
+   if (rank==0 && report_time) {
+      cout << "time = " << setprecision(8) 
+           << TIMER_ELAPSED/1000000.0 
+           << " seconds" << endl;
+   }
 
    MPI_Finalize();
 }

@@ -131,6 +131,7 @@ void print_matrix(float *array,int dim_m,int dim_n)
 int main( int argc, char *argv[])
 {
    bool verbose = false;
+   bool report_time = true;
    float *a,*b,*c,dot_prod;
    int dim_l,dim_n,dim_m;
    int i,j,k;
@@ -198,8 +199,10 @@ int main( int argc, char *argv[])
       cout << endl;
    }
 
-   cout << "time = " << setprecision(8) 
-        << TIMER_ELAPSED/1000000.0 
-        << " seconds" << endl;
+   if (report_time) {
+      cout << "time = " << setprecision(8) 
+           << TIMER_ELAPSED/1000000.0 
+           << " seconds" << endl;
+   }
 }
 
