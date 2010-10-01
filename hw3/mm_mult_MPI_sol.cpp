@@ -132,19 +132,23 @@ void get_index_size(int argc,char *argv[],int *dim_l,int *dim_m,int *dim_n) {
 */
 void fill_matrix(float *array,int dim_n,int dim_m)
 {
+#define M(i,j) *(array+i*dim_m+j)
    int i,j;
    for(i=0;i<dim_m;i++) {
       for (j=0;j<dim_n;j++) {
          array[i*dim_n+j]=drand48()*MAX_VALUE;
+         M(i,j) = (i+1)*(j+2);
       }
    }
+#undef M
 }
 
 /*
    Routine that outputs the matrices to the screen 
 */
-void print_matrix(float *array,int dim_m,int dim_n)
+void print_matrix(const char *prefix,float *array,int dim_m,int dim_n)
 {
+   cout << prefix << " matrix =" << endl;
    int i,j;
    for(i=0;i<dim_m;i++) {
       for (j=0;j<dim_n;j++) {
@@ -152,6 +156,16 @@ void print_matrix(float *array,int dim_m,int dim_n)
       }
       cout << endl;
    }
+   cout << endl;
+}
+
+/*
+   Routine that outputs the vectors to the screen (for debugging) 
+*/
+void print_vector(const char *prefix,float *array,int dim)
+{
+   cout << prefix << " vector = ";
+   for(int i=0;i<dim;i++) cout << array[i] << " ";
 }
 
 /*
@@ -160,13 +174,15 @@ void print_matrix(float *array,int dim_m,int dim_n)
 
 int main( int argc, char *argv[])
 {
+   bool debug = false;
+   bool verbose = true;
+   bool report_time = false;
    float *a,*b,*c,*a_part,*c_part,dot_prod;
    double tm_start,tm_end;
    int dim_l,dim_n,dim_m,padded_dim_l,global_dim_l;
    int local_a_matrix_sz,local_c_matrix_sz;
    int numprocs,rank,num;
    MPI_Status status;
-
 
    int i,j,k;
 
@@ -178,9 +194,6 @@ int main( int argc, char *argv[])
       each process gets l,m, and n dimension from command line
    */
    get_index_size(argc,argv,&dim_l,&dim_m,&dim_n);
-
-
-
  
    // dynamically allocate from heap the numbers in the memory space
    // for the a,b, and c matrices 
@@ -196,6 +209,13 @@ int main( int argc, char *argv[])
    // num elements in local c matrix
    local_c_matrix_sz = padded_dim_l*dim_n;
  
+   if (debug && rank==0) {
+      cout << "padded_dim_l = " << padded_dim_l << endl;
+      cout << "global_dim_l = " << global_dim_l << endl;
+      cout << "local_a_matrix_sz = " << local_a_matrix_sz << endl;
+      cout << "local_c_matrix_sz = " << local_c_matrix_sz << endl;
+   }
+
    a = new (nothrow) float[dim_l*dim_m];
    b = new (nothrow) float[dim_m*dim_n];
    c = new (nothrow) float[global_dim_l*dim_n];
@@ -207,23 +227,21 @@ int main( int argc, char *argv[])
    }
 
    /*
-      if root processor then
-   */
-   if(rank==0) {
-   
-      // initialize numbers matrix with random data
+      initialize A & B numbers matrix with random data
+   */ 
+   if (rank==0) {
       srand48(SEED);
       fill_matrix(a,dim_l,dim_m);
       fill_matrix(b,dim_m,dim_n);
+      if (debug) print_vector("A",a,dim_l*dim_m); cout << endl;
+   }
 
-      // output numbers matrix
-      cout << "A matrix =" << endl;
-      print_matrix(a,dim_l,dim_m);
-      cout << endl;
-
-      cout << "B matrix =" << endl;
-      print_matrix(b,dim_m,dim_n);
-      cout << endl;
+   /*
+     output numbers matrix
+   */
+   if (verbose && rank==0) {
+      print_matrix("A",a,dim_l,dim_m);
+      print_matrix("B",b,dim_m,dim_n);
    }
 
    // start recording the execution time
@@ -234,6 +252,13 @@ int main( int argc, char *argv[])
    // the system, broadcast the entire b matrix
    MPI_Scatter(a,local_a_matrix_sz,MPI_FLOAT,a_part,local_a_matrix_sz,
                MPI_FLOAT,0,MPI_COMM_WORLD);
+
+   if (debug) {
+      cout << "rank = " << rank << " ";
+      print_vector("a_part",a_part,local_a_matrix_sz);
+      cout << endl;
+      cout << "rank = " << rank << " local_dim_l = " << local_dim_l(rank,dim_l,numprocs) << endl;
+   }
 
    MPI_Bcast (b, dim_n*dim_m, MPI_FLOAT,0,MPI_COMM_WORLD);
 
@@ -254,11 +279,11 @@ int main( int argc, char *argv[])
    // stop recording the execution time
    TIMER_STOP;
 
-   if (rank==0) {
-      cout << "C matrix =" << endl;
-      print_matrix(c,dim_l,dim_n);
-      cout << endl;
-      cout << "time=" << setprecision(8) <<  TIMER_ELAPSED/1000000.0 
+   if (verbose && rank==0) print_matrix("C",c,dim_l,dim_n);
+
+   if (rank==0 && report_time) {
+      cout << "time = " << setprecision(8) 
+           << TIMER_ELAPSED/1000000.0 
            << " seconds" << endl;
    }
 
