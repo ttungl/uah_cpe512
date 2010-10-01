@@ -220,8 +220,8 @@ void* mat_mul_worker(void* arg) { // multiply local part of matrix
 
 int main( int argc, char *argv[])
 {
-   bool verbose = true;
-   bool report_time = false;
+   bool verbose = false;
+   bool report_time = true;
    float *a,*b,*c;
    double tm_start,tm_end;
 
