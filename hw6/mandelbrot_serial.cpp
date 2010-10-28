@@ -7,6 +7,7 @@ using namespace std;
 #include <iostream>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 #define MX_ROW 480*2
 #define MX_COL 640*2
@@ -222,7 +223,7 @@ int main( int argc, char *argv[])  {
        }
    } 
 
-   write_256_bmp("mandelbrot.bmp", num_rows,num_cols,display_out);
+   write_256_bmp("images/mandelbrot_serial.bmp", num_rows,num_cols,display_out);
 
 }
 
