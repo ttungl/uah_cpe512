@@ -9,6 +9,7 @@ using namespace std;
 #include <iostream>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 #define MX_ROW 480*2
 #define MX_COL 640*2
@@ -256,7 +257,7 @@ int main( int argc, char *argv[])  {
    } 
 
    strcpy(file,argv[1]);
-   strcat(file,"_.bmp");
+   strcat(file,"_serial.bmp");
    write_256_bmp(file, num_rows,num_cols,display_out);
 
 }
