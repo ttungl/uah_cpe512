@@ -1,5 +1,6 @@
 // Graphic Transformation/Scaling Program for 256 color
 // 640 x 580 window bit map file
+// Josh Calahan, Novemver 2010, MPI Version, based on
 // B. Earl Wells, October 2010, University of Alabama in Huntsville
 // serial version more condusive to MPI Scatter and Gather of display
 // arrays. Uses dynamic declarations of display arrays similar
