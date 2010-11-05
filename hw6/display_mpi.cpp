@@ -109,7 +109,9 @@ int main( int argc, char *argv[])  {
    MPI_Bcast(&X_, 1, MPI_INT, 0, MPI_COMM_WORLD);
    MPI_Bcast(&Y_, 1, MPI_INT, 0, MPI_COMM_WORLD);
 
-   for (int x=X; x<X+delta_X; ++x) {
+   int datasize = delta_X/numtasks;
+
+   for (int x=X+(rank*datasize); x<X+((rank+1)*datasize); ++x) {
       for (int y=Y; y<Y+delta_Y; ++y) {
          int x_ = (float(delta_X_) / float(delta_X)) * float(x-X) + X_; 
          int y_ = (float(delta_Y_) / float(delta_Y)) * float(y-Y) + Y_;
@@ -118,9 +120,11 @@ int main( int argc, char *argv[])  {
       }
    } 
 
-   strcpy(file, argv[1]);
-   strcat(file, "_mpi.bmp");
-   if (0==rank) write_256_bmp(file, num_rows,num_cols, display_out);
+   //strcpy(file, argv[1]);
+   //strcat(file, "_mpi.bmp");
+   //if (0==rank) write_256_bmp(file, num_rows,num_cols, display_out);
+   sprintf(file, "%s_mpi_%d.bmp", argv[1], rank);
+   write_256_bmp(file, num_rows,num_cols, display_out);
 
    MPI_Finalize();
 }
