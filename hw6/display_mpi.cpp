@@ -114,8 +114,8 @@ int main( int argc, char *argv[])  {
    int selected_area_datasize = delta_X/numtasks;
    const int& sad = selected_area_datasize;
 
-   int counter=0, x,y, x_,y_;
-   for (x=X+(rank*sad); x<X+((rank+1)*sad); ++x) {
+   int counter=0, x,y, x_,y_, x0=X+(rank*sad);
+   for (x=x0; x<X+((rank+1)*sad); ++x) {
       for (y=Y; y<Y+delta_Y; ++y) {
          x_ = (float(delta_X_) / float(delta_X)) * float(x-X) + X_; 
          y_ = (float(delta_Y_) / float(delta_Y)) * float(y-Y) + Y_;
@@ -131,10 +131,11 @@ fprintf(stderr, "rank=%d display_out(last)(%d,%d) ==> [%d]\n", rank,x_,y_,(x_*(n
    const int& tad = targetted_area_datasize;
 
    // NOTE: (i,j) ==> [i*(num_cols+3)+j]
-
-   //MPI_Sendrecv(void *sendbuf, int sendcount, MPI_UNSIGNED_CHAR, 0, 123, 
-   //             void *recvbuf, int recvcount, MPI_UNSIGNED_CHAR, rank, 123, 
-   //             MPI_COMM_WORLD, &status); 
+   void* buff = display_out+(x0*(num_cols+3)+0);
+   int count = (x0+tad)*(num_cols+3)+num_cols;
+   MPI_Gather(buff, count, MPI_UNSIGNED_CHAR,
+              buff, count, MPI_UNSIGNED_CHAR, 
+              0, MPI_COMM_WORLD); 
 
    //strcpy(file, argv[1]);
    //strcat(file, "_mpi.bmp");
