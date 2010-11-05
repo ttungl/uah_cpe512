@@ -11,6 +11,7 @@ using namespace std;
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <mpi.h>
 #include "bmp.hpp"
 
 void get_params(int *delta_X,int *delta_Y,int *X,int *Y,
@@ -61,7 +62,8 @@ int main( int argc, char *argv[])  {
 
    char file[80];
 
-   int num_rows, num_cols,
+   int numtasks, rank,
+       num_rows, num_cols,
        delta_X, delta_Y,
        delta_X_, delta_Y_,
        X, Y,
@@ -117,7 +119,7 @@ int main( int argc, char *argv[])  {
    } 
 
    strcpy(file, argv[1]);
-   strcat(file, "_serial.bmp");
+   strcat(file, "_mpi.bmp");
    if (0==rank) write_256_bmp(file, num_rows,num_cols, display_out);
 
    MPI_Finalize();
