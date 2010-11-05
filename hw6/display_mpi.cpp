@@ -87,6 +87,7 @@ int main( int argc, char *argv[])  {
    read_256_bmp(file, &num_rows, &num_cols, &display_in);
 
    // declare display out region
+   if (0==rank) cout << "a=" << (num_cols+3)*num_rows << endl;
    display_out = new (nothrow) unsigned char [(num_cols+3)*num_rows];
    if(display_out==0) {
      if (0==rank) cout <<"ERROR:  Insufficient Memory" << endl;
@@ -113,30 +114,46 @@ int main( int argc, char *argv[])  {
 
    int selected_area_datasize = delta_X/numtasks;
    const int& sad = selected_area_datasize;
+   if (0==rank) cout << "selected_area_datasize=" << sad << endl;
 
-   int counter=0, x,y, x_,y_, x0=X+(rank*sad);
-   for (x=x0; x<X+((rank+1)*sad); ++x) {
+   int counter=0, x,y, x_,y_;
+   for (x=X+(rank*sad); x<X+((rank+1)*sad); ++x) {
       for (y=Y; y<Y+delta_Y; ++y) {
          x_ = (float(delta_X_) / float(delta_X)) * float(x-X) + X_; 
          y_ = (float(delta_Y_) / float(delta_Y)) * float(y-Y) + Y_;
          if (x_<num_rows && y_<num_cols)  
             Display_out(x_,y_) = Display_in(x,y);
-if (0==counter) fprintf(stderr, "rank=%d display_out(first)(%d,%d) ==> [%d]\n", rank,x_,y_,(x_*(num_cols+3)+y_));
-counter=1;
+         if (0==counter) {
+            fprintf(stderr, "rank=%d display_out(first)(%d,%d) ==> [%d]\n", rank,x_,y_,(x_*(num_cols+3)+y_));
+            counter=1;
+         }
       }
    } 
-fprintf(stderr, "rank=%d display_out(last)(%d,%d) ==> [%d]\n", rank,x_,y_,(x_*(num_cols+3)+y_));
+
+   fprintf(stderr, "rank=%d display_out(last)(%d,%d) ==> [%d]\n", rank,x_,y_,(x_*(num_cols+3)+y_));
 
    int targetted_area_datasize = delta_X_/numtasks;
    const int& tad = targetted_area_datasize;
+   if (0==rank) cout << "targetted_area_datasize=" << tad << endl;
 
-   // NOTE: (i,j) ==> [i*(num_cols+3)+j]
-   void* buff = display_out+(x0*(num_cols+3)+0);
-   int count = (x0+tad)*(num_cols+3)+num_cols;
+   int buff_start_loc = (X_+(rank*tad))*(num_cols+3);
+   void* buff = display_out+buff_start_loc;
+   int count = tad*(num_cols+3);
    MPI_Gather(buff, count, MPI_UNSIGNED_CHAR,
               buff, count, MPI_UNSIGNED_CHAR, 
               0, MPI_COMM_WORLD); 
-
+/*
+   if (0!=rank) {
+      MPI_Send(display_out+(X_+(rank*tad))*(num_cols+3),
+               tad*(num_cols+3), 
+               MPI_UNSIGNED_CHAR, 0, 123, MPI_COMM_WORLD);
+   } else {
+      for (int r=1; r<numtasks; ++r) 
+         MPI_Recv(display_out+(X_+(r*tad))*(num_cols+3), 
+                  tad*(num_cols+3), 
+                  MPI_UNSIGNED_CHAR, r, 123, MPI_COMM_WORLD, &status);
+   }
+*/
    //strcpy(file, argv[1]);
    //strcat(file, "_mpi.bmp");
    //if (0==rank) write_256_bmp(file, num_rows,num_cols, display_out);
