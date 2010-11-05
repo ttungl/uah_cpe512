@@ -5,10 +5,10 @@
 600
 0
 0
-481
-600
-0
-0
+381
+500
+50
+60
 EOF
 
 display images/shut.bmp &
