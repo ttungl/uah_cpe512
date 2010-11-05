@@ -17,43 +17,43 @@ using namespace std;
 void get_params(int *delta_X,int *delta_Y,int *X,int *Y,
                 int *delta_X_,int *delta_Y_,int *X_,int *Y_) {
    int num;
-   cout << "Enter number of rows (delta X) of selected area"
-        << endl;
+//   cout << "Enter number of rows (delta X) of selected area"
+//        << endl;
    cin >> num;
    *delta_X = num;
 
-   cout << "Enter number of columns (delta Y) of selected area"
-        << endl;
+//   cout << "Enter number of columns (delta Y) of selected area"
+//        << endl;
    cin >> num;
    *delta_Y = num;
 
-   cout << "Enter the X (row) coordinate of selected area"
-        << endl;
+//   cout << "Enter the X (row) coordinate of selected area"
+//        << endl;
    cin >> num;
    *X = num;
 
-   cout << "Enter the Y (column) coordinate of selected area"
-        << endl;
+//   cout << "Enter the Y (column) coordinate of selected area"
+//        << endl;
    cin >> num;
    *Y = num;
 
-   cout << "Enter number of rows (delta X') of targetted (transformed) area"
-        << endl;
+//   cout << "Enter number of rows (delta X') of targetted (transformed) area"
+//        << endl;
    cin >> num;
    *delta_X_ = num;
 
-   cout << "Enter number of columns (delta Y') of targetted (transformed) area"
-        << endl;
+//   cout << "Enter number of columns (delta Y') of targetted (transformed) area"
+//        << endl;
    cin >> num;
    *delta_Y_ = num;
 
-   cout << "Enter the X (row) coordinate of targetted (transformed) area"
-        << endl;
+//   cout << "Enter the X (row) coordinate of targetted (transformed) area"
+//        << endl;
    cin >> num;
    *X_ = num;
 
-   cout << "Enter the Y (column) coordinate of targetted (transformed) area"
-        << endl;
+//   cout << "Enter the Y (column) coordinate of targetted (transformed) area"
+//        << endl;
    cin >> num;
    *Y_ = num;
 }
@@ -68,6 +68,8 @@ int main( int argc, char *argv[])  {
        delta_X_, delta_Y_,
        X, Y,
        X_, Y_;
+
+   MPI_Status status;
 
    MPI_Init(&argc, &argv);
    MPI_Comm_size(MPI_COMM_WORLD, &numtasks);
@@ -109,16 +111,30 @@ int main( int argc, char *argv[])  {
    MPI_Bcast(&X_, 1, MPI_INT, 0, MPI_COMM_WORLD);
    MPI_Bcast(&Y_, 1, MPI_INT, 0, MPI_COMM_WORLD);
 
-   int datasize = delta_X/numtasks;
+   int selected_area_datasize = delta_X/numtasks;
+   const int& sad = selected_area_datasize;
 
-   for (int x=X+(rank*datasize); x<X+((rank+1)*datasize); ++x) {
-      for (int y=Y; y<Y+delta_Y; ++y) {
-         int x_ = (float(delta_X_) / float(delta_X)) * float(x-X) + X_; 
-         int y_ = (float(delta_Y_) / float(delta_Y)) * float(y-Y) + Y_;
+   int counter=0, x,y, x_,y_;
+   for (x=X+(rank*sad); x<X+((rank+1)*sad); ++x) {
+      for (y=Y; y<Y+delta_Y; ++y) {
+         x_ = (float(delta_X_) / float(delta_X)) * float(x-X) + X_; 
+         y_ = (float(delta_Y_) / float(delta_Y)) * float(y-Y) + Y_;
          if (x_<num_rows && y_<num_cols)  
             Display_out(x_,y_) = Display_in(x,y);
+if (0==counter) fprintf(stderr, "rank=%d display_out(first)(%d,%d) ==> [%d]\n", rank,x_,y_,(x_*(num_cols+3)+y_));
+counter=1;
       }
    } 
+fprintf(stderr, "rank=%d display_out(last)(%d,%d) ==> [%d]\n", rank,x_,y_,(x_*(num_cols+3)+y_));
+
+   int targetted_area_datasize = delta_X_/numtasks;
+   const int& tad = targetted_area_datasize;
+
+   // NOTE: (i,j) ==> [i*(num_cols+3)+j]
+
+   //MPI_Sendrecv(void *sendbuf, int sendcount, MPI_UNSIGNED_CHAR, 0, 123, 
+   //             void *recvbuf, int recvcount, MPI_UNSIGNED_CHAR, rank, 123, 
+   //             MPI_COMM_WORLD, &status); 
 
    //strcpy(file, argv[1]);
    //strcat(file, "_mpi.bmp");
