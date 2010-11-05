@@ -1,15 +1,15 @@
 #!/bin/bash
 
-./display_serial.exe images/shut << EOF
-300
-400
-100
-100
-50
-50
-25
-25
+./display_mpi.exe images/shut << EOF
+481
+600
+0
+0
+481
+600
+0
+0
 EOF
 
-cmp images/shut_serial.bmp \
-    images/shut_serial_baseline.bmp
+display images/shut.bmp &
+display images/shut_serial.bmp &
