@@ -67,8 +67,13 @@ int main( int argc, char *argv[])  {
        X, Y,
        X_, Y_;
 
+   MPI_Init(&argc, &argv);
+   MPI_Comm_size(MPI_COMM_WORLD, &numtasks);
+   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+
    if (argc != 2) {
-      cout << "Usage: display [file name (no extension)]" << endl;
+      if (0==rank) cout << "Usage: display [file name (no extension)]" << endl;
+      MPI_Finalize();
       exit(1);
    }
 
@@ -80,18 +85,27 @@ int main( int argc, char *argv[])  {
    // declare display out region
    display_out = new (nothrow) unsigned char [(num_cols+3)*num_rows];
    if(display_out==0) {
-     cout <<"ERROR:  Insufficient Memory" << endl;
+     if (0==rank) cout <<"ERROR:  Insufficient Memory" << endl;
+     MPI_Finalize();
      exit(1);
    }
 
-   cout << "num_rows=" << num_rows << " num_cols=" << num_cols << endl;
+   if (0==rank) cout << "num_rows=" << num_rows << " num_cols=" << num_cols << endl;
 
    // clear out output display area
    for (int i=0; i<num_rows; ++i)
       for (int j=0; j<num_cols; ++j)
          Display_out(i,j)=255;
 
-   get_params(&delta_X,&delta_Y, &X,&Y, &delta_X_,&delta_Y_, &X_,&Y_);
+   if (0==rank) get_params(&delta_X,&delta_Y, &X,&Y, &delta_X_,&delta_Y_, &X_,&Y_);
+   MPI_Bcast(&delta_X, 1, MPI_INT, 0, MPI_COMM_WORLD);
+   MPI_Bcast(&delta_Y, 1, MPI_INT, 0, MPI_COMM_WORLD);
+   MPI_Bcast(&delta_X_, 1, MPI_INT, 0, MPI_COMM_WORLD);
+   MPI_Bcast(&delta_Y_, 1, MPI_INT, 0, MPI_COMM_WORLD);
+   MPI_Bcast(&X, 1, MPI_INT, 0, MPI_COMM_WORLD);
+   MPI_Bcast(&Y, 1, MPI_INT, 0, MPI_COMM_WORLD);
+   MPI_Bcast(&X_, 1, MPI_INT, 0, MPI_COMM_WORLD);
+   MPI_Bcast(&Y_, 1, MPI_INT, 0, MPI_COMM_WORLD);
 
    for (int x=X; x<X+delta_X; ++x) {
       for (int y=Y; y<Y+delta_Y; ++y) {
@@ -104,5 +118,7 @@ int main( int argc, char *argv[])  {
 
    strcpy(file, argv[1]);
    strcat(file, "_serial.bmp");
-   write_256_bmp(file, num_rows,num_cols, display_out);
+   if (0==rank) write_256_bmp(file, num_rows,num_cols, display_out);
+
+   MPI_Finalize();
 }
