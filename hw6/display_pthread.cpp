@@ -30,7 +30,6 @@ int numtasks, datasize,
 void* display_worker(void* arg) {
    thread_params* p = (thread_params*)arg;
    int rank = p->rank;
-   fprintf(stderr, "rank=%d\n", rank);
 
    for (int x=X+(rank*datasize); x<X+((rank+1)*datasize); ++x) {
       for (int y=Y; y<Y+delta_Y; ++y) {
