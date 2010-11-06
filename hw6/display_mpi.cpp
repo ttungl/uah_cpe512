@@ -17,43 +17,43 @@ using namespace std;
 void get_params(int *delta_X,int *delta_Y,int *X,int *Y,
                 int *delta_X_,int *delta_Y_,int *X_,int *Y_) {
    int num;
-//   cout << "Enter number of rows (delta X) of selected area"
-//        << endl;
+   cout << "Enter number of rows (delta X) of selected area"
+        << endl;
    cin >> num;
    *delta_X = num;
 
-//   cout << "Enter number of columns (delta Y) of selected area"
-//        << endl;
+   cout << "Enter number of columns (delta Y) of selected area"
+        << endl;
    cin >> num;
    *delta_Y = num;
 
-//   cout << "Enter the X (row) coordinate of selected area"
-//        << endl;
+   cout << "Enter the X (row) coordinate of selected area"
+        << endl;
    cin >> num;
    *X = num;
 
-//   cout << "Enter the Y (column) coordinate of selected area"
-//        << endl;
+   cout << "Enter the Y (column) coordinate of selected area"
+        << endl;
    cin >> num;
    *Y = num;
 
-//   cout << "Enter number of rows (delta X') of targetted (transformed) area"
-//        << endl;
+   cout << "Enter number of rows (delta X') of targetted (transformed) area"
+        << endl;
    cin >> num;
    *delta_X_ = num;
 
-//   cout << "Enter number of columns (delta Y') of targetted (transformed) area"
-//        << endl;
+   cout << "Enter number of columns (delta Y') of targetted (transformed) area"
+        << endl;
    cin >> num;
    *delta_Y_ = num;
 
-//   cout << "Enter the X (row) coordinate of targetted (transformed) area"
-//        << endl;
+   cout << "Enter the X (row) coordinate of targetted (transformed) area"
+        << endl;
    cin >> num;
    *X_ = num;
 
-//   cout << "Enter the Y (column) coordinate of targetted (transformed) area"
-//        << endl;
+   cout << "Enter the Y (column) coordinate of targetted (transformed) area"
+        << endl;
    cin >> num;
    *Y_ = num;
 }
@@ -103,6 +103,7 @@ int main( int argc, char *argv[])  {
          Display_out(i,j)=255;
 
    if (0==rank) get_params(&delta_X,&delta_Y, &X,&Y, &delta_X_,&delta_Y_, &X_,&Y_);
+
    MPI_Bcast(&delta_X, 1, MPI_INT, 0, MPI_COMM_WORLD);
    MPI_Bcast(&delta_Y, 1, MPI_INT, 0, MPI_COMM_WORLD);
    MPI_Bcast(&delta_X_, 1, MPI_INT, 0, MPI_COMM_WORLD);
@@ -112,53 +113,39 @@ int main( int argc, char *argv[])  {
    MPI_Bcast(&X_, 1, MPI_INT, 0, MPI_COMM_WORLD);
    MPI_Bcast(&Y_, 1, MPI_INT, 0, MPI_COMM_WORLD);
 
-   int selected_area_datasize = delta_X/numtasks;
-   const int& sad = selected_area_datasize;
-   if (0==rank) cout << "selected_area_datasize=" << sad << endl;
+   int selected_area_balance = delta_X%numtasks;
+   int targetted_area_balance = delta_X_%numtasks;
 
-   int counter=0, x,y, x_,y_;
-   for (x=X+(rank*sad); x<X+((rank+1)*sad); ++x) {
-      for (y=Y; y<Y+delta_Y; ++y) {
-         x_ = (float(delta_X_) / float(delta_X)) * float(x-X) + X_; 
-         y_ = (float(delta_Y_) / float(delta_Y)) * float(y-Y) + Y_;
+   if (selected_area_balance || targetted_area_balance) {
+      if (0==rank) cout << "ERROR: this implementation only works for datasizes that" 
+                        << " are a multiple of the number of processors" << endl;
+      MPI_Finalize();
+      exit(1);
+   }
+
+   int selected_area_datasize = delta_X/numtasks;
+   int targetted_area_datasize = delta_X_/numtasks;
+
+   for (int x=X+(rank*selected_area_datasize);
+            x<X+((rank+1)*selected_area_datasize); ++x) {
+      for (int y=Y; y<Y+delta_Y; ++y) {
+         int x_ = (float(delta_X_) / float(delta_X)) * float(x-X) + X_; 
+         int y_ = (float(delta_Y_) / float(delta_Y)) * float(y-Y) + Y_;
          if (x_<num_rows && y_<num_cols)  
             Display_out(x_,y_) = Display_in(x,y);
-         if (0==counter) {
-            fprintf(stderr, "rank=%d display_out(first)(%d,%d) ==> [%d]\n", rank,x_,y_,(x_*(num_cols+3)+y_));
-            counter=1;
-         }
       }
    } 
 
-   fprintf(stderr, "rank=%d display_out(last)(%d,%d) ==> [%d]\n", rank,x_,y_,(x_*(num_cols+3)+y_));
+   int start_loc = (X_+(rank*targetted_area_datasize))*(num_cols+3);
+   int count = targetted_area_datasize*(num_cols+3);
 
-   int targetted_area_datasize = delta_X_/numtasks;
-   const int& tad = targetted_area_datasize;
-   if (0==rank) cout << "targetted_area_datasize=" << tad << endl;
-
-   int buff_start_loc = (X_+(rank*tad))*(num_cols+3);
-   void* buff = display_out+buff_start_loc;
-   int count = tad*(num_cols+3);
-   MPI_Gather(buff, count, MPI_UNSIGNED_CHAR,
-              buff, count, MPI_UNSIGNED_CHAR, 
+   MPI_Gather(display_out+start_loc, count, MPI_UNSIGNED_CHAR,
+              display_out+start_loc, count, MPI_UNSIGNED_CHAR, 
               0, MPI_COMM_WORLD); 
-/*
-   if (0!=rank) {
-      MPI_Send(display_out+(X_+(rank*tad))*(num_cols+3),
-               tad*(num_cols+3), 
-               MPI_UNSIGNED_CHAR, 0, 123, MPI_COMM_WORLD);
-   } else {
-      for (int r=1; r<numtasks; ++r) 
-         MPI_Recv(display_out+(X_+(r*tad))*(num_cols+3), 
-                  tad*(num_cols+3), 
-                  MPI_UNSIGNED_CHAR, r, 123, MPI_COMM_WORLD, &status);
-   }
-*/
-   //strcpy(file, argv[1]);
-   //strcat(file, "_mpi.bmp");
-   //if (0==rank) write_256_bmp(file, num_rows,num_cols, display_out);
-   sprintf(file, "%s_mpi_%d.bmp", argv[1], rank);
-   write_256_bmp(file, num_rows,num_cols, display_out);
+
+   strcpy(file, argv[1]);
+   strcat(file, "_mpi.bmp");
+   if (0==rank) write_256_bmp(file, num_rows,num_cols, display_out);
 
    MPI_Finalize();
 }
