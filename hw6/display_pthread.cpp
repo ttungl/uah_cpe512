@@ -1,6 +1,6 @@
 // Graphic Transformation/Scaling Program for 256 color
 // 640 x 580 window bit map file
-// Josh Calahan, November 2010, MPI Version, based on
+// Josh Calahan, November 2010, pthread Version, based on
 // B. Earl Wells, October 2010, University of Alabama in Huntsville
 // serial version more condusive to MPI Scatter and Gather of display
 // arrays. Uses dynamic declarations of display arrays similar
@@ -11,8 +11,21 @@ using namespace std;
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <mpi.h>
+#include <pthread.h>
 #include "bmp.hpp"
+
+/*
+   WORKER THREAD
+*/
+struct thread_params {
+   int rank;
+};
+
+void* display_worker(void* arg) {
+   thread_params* p = (thread_params*)arg;
+
+   return 0;
+}
 
 void get_params(int *delta_X,int *delta_Y,int *X,int *Y,
                 int *delta_X_,int *delta_Y_,int *X_,int *Y_) {
@@ -60,26 +73,19 @@ void get_params(int *delta_X,int *delta_Y,int *X,int *Y,
 
 int main( int argc, char *argv[])  {
 
+   if (argc != 3) {
+      cout << "Usage: display [file name (no extension)] n_threads" << endl;
+      exit(1);
+   }
+
    char file[80];
 
-   int numtasks, rank,
+   int numtasks = atoi(argv[2]),
        num_rows, num_cols,
        delta_X, delta_Y,
        delta_X_, delta_Y_,
        X, Y,
        X_, Y_;
-
-   MPI_Status status;
-
-   MPI_Init(&argc, &argv);
-   MPI_Comm_size(MPI_COMM_WORLD, &numtasks);
-   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-
-   if (argc != 2) {
-      if (0==rank) cout << "Usage: display [file name (no extension)]" << endl;
-      MPI_Finalize();
-      exit(1);
-   }
 
    // read a bit map file such as shut.bmp to get initial image 
    strcpy(file, argv[1]);
@@ -89,44 +95,32 @@ int main( int argc, char *argv[])  {
    // declare display out region
    display_out = new (nothrow) unsigned char [(num_cols+3)*num_rows];
    if(display_out==0) {
-     if (0==rank) cout <<"ERROR:  Insufficient Memory" << endl;
-     MPI_Finalize();
+     cout <<"ERROR:  Insufficient Memory" << endl;
      exit(1);
    }
 
-   if (0==rank) cout << "num_rows=" << num_rows << " num_cols=" << num_cols << endl;
+   cout << "num_rows=" << num_rows << " num_cols=" << num_cols << endl;
 
    // clear out output display area
    for (int i=0; i<num_rows; ++i)
       for (int j=0; j<num_cols; ++j)
          Display_out(i,j)=255;
 
-   if (0==rank) get_params(&delta_X,&delta_Y, &X,&Y, &delta_X_,&delta_Y_, &X_,&Y_);
-
-   MPI_Bcast(&delta_X, 1, MPI_INT, 0, MPI_COMM_WORLD);
-   MPI_Bcast(&delta_Y, 1, MPI_INT, 0, MPI_COMM_WORLD);
-   MPI_Bcast(&delta_X_, 1, MPI_INT, 0, MPI_COMM_WORLD);
-   MPI_Bcast(&delta_Y_, 1, MPI_INT, 0, MPI_COMM_WORLD);
-   MPI_Bcast(&X, 1, MPI_INT, 0, MPI_COMM_WORLD);
-   MPI_Bcast(&Y, 1, MPI_INT, 0, MPI_COMM_WORLD);
-   MPI_Bcast(&X_, 1, MPI_INT, 0, MPI_COMM_WORLD);
-   MPI_Bcast(&Y_, 1, MPI_INT, 0, MPI_COMM_WORLD);
+   get_params(&delta_X,&delta_Y, &X,&Y, &delta_X_,&delta_Y_, &X_,&Y_);
 
    int selected_area_balance = delta_X%numtasks;
    int targetted_area_balance = delta_X_%numtasks;
 
    if (selected_area_balance || targetted_area_balance) {
-      if (0==rank) cout << "ERROR: this implementation only works for datasizes that" 
-                        << " are a multiple of the number of processors" << endl;
-      MPI_Finalize();
+      cout << "ERROR: this implementation only works for datasizes that" 
+           << " are a multiple of the number of processors" << endl;
       exit(1);
    }
 
    int selected_area_datasize = delta_X/numtasks;
    int targetted_area_datasize = delta_X_/numtasks;
 
-   for (int x=X+(rank*selected_area_datasize);
-            x<X+((rank+1)*selected_area_datasize); ++x) {
+   for (int x=X; x<X+delta_Y; ++x) {
       for (int y=Y; y<Y+delta_Y; ++y) {
          int x_ = (float(delta_X_) / float(delta_X)) * float(x-X) + X_; 
          int y_ = (float(delta_Y_) / float(delta_Y)) * float(y-Y) + Y_;
@@ -135,16 +129,17 @@ int main( int argc, char *argv[])  {
       }
    } 
 
-   int start_loc = (X_+(rank*targetted_area_datasize))*(num_cols+3);
-   int count = targetted_area_datasize*(num_cols+3);
+   pthread_t* threads = new pthread_t[numtasks];
+   thread_params* params = new thread_params[numtasks];
 
-   MPI_Gather(display_out+start_loc, count, MPI_UNSIGNED_CHAR,
-              display_out+start_loc, count, MPI_UNSIGNED_CHAR, 
-              0, MPI_COMM_WORLD); 
+   for (int i=0; i<numtasks; ++i) {
+      params[i].rank = i;
+      pthread_create(threads+i, NULL, display_worker, params+i);
+   }
+
+   for (int i=0; i<numtasks; ++i) pthread_join(threads[i], NULL);
 
    strcpy(file, argv[1]);
-   strcat(file, "_mpi.bmp");
-   if (0==rank) write_256_bmp(file, num_rows,num_cols, display_out);
-
-   MPI_Finalize();
+   strcat(file, "_pthread.bmp");
+   write_256_bmp(file, num_rows,num_cols, display_out);
 }
