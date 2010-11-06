@@ -33,8 +33,20 @@ EOF
 50
 EOF
 
+./display_omp.exe images/red_green_256 8 << EOF
+360
+360
+0
+0
+200
+200
+50
+50
+EOF
+
 cmp images/red_green_256_{serial,mpi}.bmp
 cmp images/red_green_256_{serial,pthread}.bmp
+cmp images/red_green_256_{serial,omp}.bmp
 
 ./display_serial.exe images/shut << EOF
 360
@@ -69,5 +81,17 @@ EOF
 50
 EOF
 
+./display_omp.exe images/shut 8 << EOF
+360
+360
+0
+0
+200
+200
+50
+50
+EOF
+
 cmp images/shut_{serial,mpi}.bmp
 cmp images/shut_{serial,pthread}.bmp
+cmp images/shut_{serial,omp}.bmp
