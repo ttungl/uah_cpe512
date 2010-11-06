@@ -7,9 +7,6 @@ using namespace std;
 #include <string.h>
 #include "bmp.hpp"
 
-#define MX_ROW 480*2
-#define MX_COL 640*2
-
 int cal_pixel(COMPLEX c) {
    int count, max_iter;
    COMPLEX z;

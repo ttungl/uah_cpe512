@@ -1,8 +1,5 @@
 // bmp.hpp
 
-#define MX_ROW 480*2
-#define MX_COL 640*2
-
 // from the text page 87
 struct COMPLEX {
    float real;
