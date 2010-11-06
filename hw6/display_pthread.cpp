@@ -21,8 +21,25 @@ struct thread_params {
    int rank;
 };
 
+int numtasks, datasize,
+    num_rows, num_cols,
+    delta_X, delta_Y,
+    delta_X_, delta_Y_,
+    X, Y, X_, Y_;
+
 void* display_worker(void* arg) {
    thread_params* p = (thread_params*)arg;
+   int rank = p->rank;
+   fprintf(stderr, "rank=%d\n", rank);
+
+   for (int x=X+(rank*datasize); x<X+((rank+1)*datasize); ++x) {
+      for (int y=Y; y<Y+delta_Y; ++y) {
+         int x_ = (float(delta_X_) / float(delta_X)) * float(x-X) + X_; 
+         int y_ = (float(delta_Y_) / float(delta_Y)) * float(y-Y) + Y_;
+         if (x_<num_rows && y_<num_cols)  
+            Display_out(x_,y_) = Display_in(x,y);
+      }
+   } 
 
    return 0;
 }
@@ -79,13 +96,7 @@ int main( int argc, char *argv[])  {
    }
 
    char file[80];
-
-   int numtasks = atoi(argv[2]),
-       num_rows, num_cols,
-       delta_X, delta_Y,
-       delta_X_, delta_Y_,
-       X, Y,
-       X_, Y_;
+   numtasks = atoi(argv[2]);
 
    // read a bit map file such as shut.bmp to get initial image 
    strcpy(file, argv[1]);
@@ -108,26 +119,15 @@ int main( int argc, char *argv[])  {
 
    get_params(&delta_X,&delta_Y, &X,&Y, &delta_X_,&delta_Y_, &X_,&Y_);
 
-   int selected_area_balance = delta_X%numtasks;
-   int targetted_area_balance = delta_X_%numtasks;
+   int balance = delta_X%numtasks;
 
-   if (selected_area_balance || targetted_area_balance) {
+   if (balance) {
       cout << "ERROR: this implementation only works for datasizes that" 
-           << " are a multiple of the number of processors" << endl;
+           << " are a multiple of the number of threads" << endl;
       exit(1);
    }
 
-   int selected_area_datasize = delta_X/numtasks;
-   int targetted_area_datasize = delta_X_/numtasks;
-
-   for (int x=X; x<X+delta_Y; ++x) {
-      for (int y=Y; y<Y+delta_Y; ++y) {
-         int x_ = (float(delta_X_) / float(delta_X)) * float(x-X) + X_; 
-         int y_ = (float(delta_Y_) / float(delta_Y)) * float(y-Y) + Y_;
-         if (x_<num_rows && y_<num_cols)  
-            Display_out(x_,y_) = Display_in(x,y);
-      }
-   } 
+   datasize = delta_X/numtasks;
 
    pthread_t* threads = new pthread_t[numtasks];
    thread_params* params = new thread_params[numtasks];
