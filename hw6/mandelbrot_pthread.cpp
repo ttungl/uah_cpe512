@@ -25,14 +25,15 @@ const float imag_min = -2.0, imag_max = 2.0;
 
 float scale_real, scale_imag;
 
-int numtasks, datasize,
-    num_rows, num_cols;
+int numtasks, num_rows, num_cols;
 
 void* display_worker(void* arg) {
    thread_params* p = (thread_params*)arg;
    int rank = p->rank;
+   int datasize = num_rows/numtasks;
+   int balance = rank==numtasks-1 ? num_rows%numtasks : 0;
 
-   for (int i=(rank*datasize); i<((rank+1)*datasize); ++i) {
+   for (int i=(rank*datasize); i<((rank+1)*(datasize+balance)); ++i) {
        for (int j=0; j<num_cols; ++j) {
           COMPLEX c;
           c.real = real_min + float(j) * scale_real;
@@ -76,14 +77,6 @@ int main( int argc, char *argv[])  {
    scale_real = (real_max - real_min)/disp_width;
    scale_imag = (imag_max - imag_min)/disp_height;
    
-   if (num_rows%numtasks) {
-      cout << "ERROR: this implementation only works for datasizes that" 
-           << " are a multiple of the number of threads" << endl;
-      exit(1);
-   }
-
-   datasize = num_rows/numtasks;
-
    pthread_t* threads = new pthread_t[numtasks];
    thread_params* params = new thread_params[numtasks];
 

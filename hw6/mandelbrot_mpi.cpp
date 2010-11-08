@@ -55,16 +55,10 @@ int main( int argc, char *argv[])  {
    scale_real = (real_max - real_min)/disp_width;
    scale_imag = (imag_max - imag_min)/disp_height;
    
-   if (num_rows%numtasks) {
-      if (0==rank) cout << "ERROR: this implementation only works for datasizes that" 
-                        << " are a multiple of the number of processors" << endl;
-      MPI_Finalize();
-      exit(1);
-   }
-
    int datasize = num_rows/numtasks;
+   int balance = rank==numtasks-1 ? num_rows%numtasks : 0;
 
-   for (int i=(rank*datasize); i<((rank+1)*datasize); ++i) {
+   for (int i=(rank*datasize); i<((rank+1)*(datasize+balance)); ++i) {
        for (int j=0; j<num_cols; ++j) {
           COMPLEX c;
           c.real = real_min + float(j) * scale_real;
@@ -77,8 +71,20 @@ int main( int argc, char *argv[])  {
    int count = datasize*(num_cols+3);
 
    MPI_Gather(display_out+start_loc, count, MPI_UNSIGNED_CHAR,
-              display_out+start_loc, count, MPI_UNSIGNED_CHAR, 
+              display_out, count, MPI_UNSIGNED_CHAR, 
               0, MPI_COMM_WORLD); 
+
+   if (int balance = num_rows%numtasks) {
+      int start_loc = (numtasks*datasize)*(num_cols+3);
+      int count = balance*(num_cols+3);
+      if (rank==numtasks-1) {
+         MPI_Send(display_out+start_loc, count, MPI_UNSIGNED_CHAR,
+                  0, 123, MPI_COMM_WORLD);
+      } else if (rank==0) {
+         MPI_Recv(display_out+start_loc, count, MPI_UNSIGNED_CHAR,
+                  numtasks-1, 123, MPI_COMM_WORLD, &status);
+      }
+   }
 
    if (0==rank)
       write_256_bmp("images/mandelbrot_mpi.bmp", num_rows,num_cols,display_out);

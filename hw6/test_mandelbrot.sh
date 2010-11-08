@@ -8,3 +8,12 @@ mpirun -np 8 ./mandelbrot_mpi.exe images/red_green_256
 cmp images/mandelbrot_{serial,mpi}.bmp
 cmp images/mandelbrot_{serial,pthread}.bmp
 cmp images/mandelbrot_{serial,omp}.bmp
+
+./mandelbrot_serial.exe images/shut
+mpirun -np 8 ./mandelbrot_mpi.exe images/shut
+./mandelbrot_pthread.exe images/shut 8
+./mandelbrot_omp.exe images/shut 8
+
+cmp images/mandelbrot_{serial,mpi}.bmp
+cmp images/mandelbrot_{serial,pthread}.bmp
+cmp images/mandelbrot_{serial,omp}.bmp

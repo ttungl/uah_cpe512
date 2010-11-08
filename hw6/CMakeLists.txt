@@ -3,7 +3,6 @@ project(cpe512_hw6)
 enable_testing()
 
 SET(CMAKE_CXX_COMPILER mpicxx)
-SET(CMAKE_CXX_FLAGS "-openmp")
 
 add_library(bmp bmp.cpp bmp.hpp)
 
@@ -18,6 +17,9 @@ target_link_libraries(display_pthread.exe bmp pthread)
 
 add_executable(display_omp.exe display_omp.cpp)
 target_link_libraries(display_omp.exe bmp)
+set_target_properties(display_omp.exe PROPERTIES 
+   COMPILE_FLAGS "-openmp"
+   LINK_FLAGS "-openmp")
 
 add_executable(mandelbrot_serial.exe mandelbrot_serial.cpp)
 target_link_libraries(mandelbrot_serial.exe bmp)
@@ -30,6 +32,9 @@ target_link_libraries(mandelbrot_pthread.exe bmp pthread)
 
 add_executable(mandelbrot_omp.exe mandelbrot_omp.cpp)
 target_link_libraries(mandelbrot_omp.exe bmp)
+set_target_properties(mandelbrot_omp.exe PROPERTIES
+   COMPILE_FLAGS "-openmp"
+   LINK_FLAGS "-openmp")
 
 add_test(test_display ./test_display.sh)
 add_test(test_mandelbrot ./test_mandelbrot.sh)
